@@ -1,125 +1,132 @@
 <div align="center">
- <h1>GrimAC</h1>
+ <h1>LightningGrim</h1>
+
+ <p>
+  <strong>An independent fork of GrimAC and LightningGrim</strong>
+ </p>
 
  <div>
-  <a href="https://github.com/GrimAnticheat/Grim/actions/workflows/gradle-publish.yml">
-   <img alt="Workflow" src="https://img.shields.io/github/actions/workflow/status/GrimAnticheat/Grim/gradle-publish.yml?style=flat&logo=github"/>
+  <a href="https://github.com/ImApon877/LightningGrim/actions">
+   <img alt="GitHub Actions" src="https://img.shields.io/github/actions/workflow/status/ImApon877/LightningGrim/build-and-publish.yml?style=flat&logo=github"/>
   </a>&nbsp;&nbsp;
-  <a href="https://modrinth.com/plugin/grimac">
-   <img alt="Modrinth" src="https://img.shields.io/modrinth/v/LJNGWSvH?style=flat&label=version&logo=modrinth">
+  <a href="https://github.com/ImApon877/LightningGrim/releases">
+   <img alt="GitHub release" src="https://img.shields.io/github/v/release/ImApon877/LightningGrim?style=flat&logo=github"/>
   </a>&nbsp;&nbsp;
-  <a href="https://modrinth.com/plugin/grimac#download">
-   <img alt="Downloads" src="https://img.shields.io/modrinth/dt/LJNGWSvH?style=flat&logo=modrinth&label=downloads&link=https%3A%2F%2Fmodrinth.com%2Fplugin%2Fgrimac%23download">
-  </a>&nbsp;&nbsp;
-  <a href="https://discord.grim.ac">
-   <img alt="Discord" src="https://img.shields.io/discord/811396969670901800?style=flat&label=discord&logo=discord">
+  <a href="https://github.com/ImApon877/LightningGrim/issues">
+   <img alt="Issues" src="https://img.shields.io/github/issues/ImApon877/LightningGrim?style=flat&logo=github"/>
   </a>
  </div>
  <br>
 </div>
 
-GrimAC is an open source Minecraft anticheat designed to support the latest versions of Minecraft.
-It currently supports minecraft versions 1.8–26.2. Geyser players are fully exempt from the anticheat to prevent false positives.
-This project is considered feature-complete for the 2.0 (open-source) branch. If you would like a bug fix or enhancement and cannot sponsor the work, pull requests are welcome.
-A premium version is planned, which will offer additional subscription-based paid checks, such as heuristics.
+LightningGrim is an open-source Minecraft anticheat based on GrimAC and LightningGrim. This fork focuses on performance improvements, more accurate reach and interaction checks, packet-order validation, and additional staff and proxy integrations.
 
-## Downloads
+Important disclaimer
 
-- Latest updates:
-  - **[Modrinth](https://modrinth.com/plugin/grimac)** *(recommended)*
-  - GitHub
-  artifacts: [Bukkit](https://nightly.link/GrimAnticheat/Grim/workflows/gradle-publish/2.0/grimac-bukkit.zip), [Fabric](https://nightly.link/GrimAnticheat/Grim/workflows/gradle-publish/2.0/grimac-fabric.zip) *(bleeding edge)*
-- Major releases only:
-  - ~~[Hangar](https://hangar.papermc.io/GrimAnticheat/GrimAnticheat)~~
-  - ~~[SpigotMC](https://www.spigotmc.org/resources/grim-anticheat.99923/)~~
+This repository is an independent, community-maintained fork. It is not affiliated with, sponsored by, maintained by, or officially endorsed by the GrimAC or LightningGrim authors. GrimAC, LightningGrim, and related names and trademarks belong to their respective owners.
 
-## Requirements & Installation
+Changes in this fork
 
-- Java 17 or higher. *For more details, see [Updating-to-Java-17](https://github.com/GrimAnticheat/Grim/wiki/Updating-to-Java-17).*
-- A Spigot, Paper, Folia, or Fabric server environment. *For more details, see [Supported-environments](https://github.com/GrimAnticheat/Grim/wiki/Supported-environments).*
+WallHit: detects attacks through blocks.
 
-If you use a proxy such as Velocity or Bungeecord:
-- If you use Geyser, Floodgate must be installed on the backend server (where Grim is) so Grim can access the Floodgate API.
-- If you use ViaVersion, it must be installed on the backend server (where Grim is) ONLY.
-  Grim does not support having ViaVersion installed on the proxy, even if it is also installed on the backend.
+EntityPierce: detects attacks through other entities.
 
-## Resources
+Optimised reach, hitbox, and collision calculations.
 
-- For documentation and examples visit the [Wiki](https://github.com/GrimAnticheat/Grim/wiki).
-- For answers to commonly asked questions visit the [FAQ](https://github.com/GrimAnticheat/Grim/wiki/FAQ).
-- For community support and project discussion join our [Discord](https://discord.grim.ac).
+Bukkit piston-event optimisations.
 
-## Pull Requests
+Packet-order checks for NoSlow, AutoBlock, and similar exploits.
 
-See [Contributing](CONTRIBUTING.md) for more information about contributing and what our guidelines
-are.
+Inventory-interaction validation.
 
-## Developer Plugin API
+Discord webhook and punishment integrations.
 
-Grim's plugin API allows you to integrate Grim into your own plugins. Visit
-the [plugin API repository](https://github.com/GrimAnticheat/GrimAPI) for the source code and more
-information.
+Violation history and staff-oriented commands.
 
-## Compiling From Source
+BungeeCord and Velocity bridge modules.
 
-1. `git clone https://github.com/Axionize/LightningGrim`
-2. `cd LightningGrim`
-3. `./gradlew build`
-4. The final jars will compile into the `<platform>/build/libs` folders
+Additional compatibility and performance fixes.
 
-## Grim Supremacy
+Downloads
 
-What makes Grim stand out against other anticheats?
+Releases and development builds will be published on the GitHub Releases page.
 
-### Movement Simulation Engine
+Only download builds from sources you trust. Always test a new build on a staging server before using it in production.
 
-* We have a 1:1 replication of the player's possible movements
-    * This covers everything from basic walking, swimming, knockback, cobwebs, to bubble columns
-    * It even covers riding entities from boats to pigs to striders
-* Built upon covering edge cases to confirm accuracy
-* 1.13+ clients on 1.13+ servers, 1.12- clients on 1.13+ servers, 1.13+ clients on 1.12- servers,
-  and 1.12- clients on 1.12- servers are all supported regardless of the large technical changes
-  between these versions.
-* The order of collisions depends on the client version and is correct
-* Accounts for minor bounding box differences between versions, for example:
-    * Single glass panes will be a + shape for 1.7-1.8 players and * for 1.9+ players
-    * 1.13+ clients on 1.8 servers see the + glass pane hitbox due to ViaVersion
-    * Many other blocks have this extreme attention to detail.
-    * Waterlogged blocks do not exist for 1.12 or below players
-    * Blocks that do not exist in the client's version use ViaVersion's replacement block
-    * Block data that cannot be translated to previous versions is replaced correctly
-    * All vanilla collision boxes have been implemented
+Requirements and installation
 
-### Fully asynchronous and multithreaded design
+Java 17 or newer.
 
-* All movement checks and the overwhelming majority of listeners run on the netty thread
-* The anticheat can scale to many hundreds of players, if not more
-* Thread safety is carefully thought out
-* The next core allows for this design
+A supported Paper, Spigot, Folia, or Fabric server environment.
 
-### Full world replication
+ViaVersion installed on the backend server when required. ViaVersion should not be installed only on the proxy.
 
-* The anticheat keeps a replica of the world for each player
-* The replica is created by listening to chunk data packets, block places, and block changes
-* On all versions, chunks are compressed to 16-64 kb per chunk using palettes
-* Using this cache, the anticheat can safely access the world state
-* Per player, the cache allows for multithreaded design
-* Sending players fake blocks with packets is safe and does not lead to falses
-* The world is recreated for each player to allow lag compensation
-* Client sided blocks cause no issues with packet based blocks. Block glitching does not false the
-  anticheat.
+If using Geyser, Floodgate must be installed on the backend server so the anticheat can access its API.
 
-### Latency compensation
+Place the appropriate platform JAR in the server's plugins or mods directory, start the server once, and review the generated configuration before enabling punishments.
 
-* World changes are queued until they reach the player
-* This means breaking blocks under a player does not false the anticheat
-* Everything from flying status to movement speed will be latency compensated
+Resources
 
-### Inventory compensation
+Original GrimAC repository
 
-* The player's inventory is tracked to prevent ghost blocks at high latency, and other errors
+Original LightningGrim repository
 
-### Secure by design, not obscurity
+GrimAC Wiki
 
-* All systems are designed to be highly secure and mathematically impossible to bypass
-* For example, the prediction engine knows all possible movements and cannot be bypassed
+GrimAPI
+
+Issues and bug reports
+
+When opening an issue, include the Minecraft version, server software, ViaVersion version, logs, and clear reproduction steps.
+
+Pull requests
+
+Pull requests are welcome. Please read CONTRIBUTING.md, keep changes focused, preserve upstream attribution, and add tests where possible.
+
+Compiling from source
+
+git clone https://github.com/ImApon877/LightningGrim.git
+cd LightningGrim
+./gradlew build
+
+On Windows:
+
+git clone https://github.com/ImApon877/LightningGrim.git
+cd LightningGrim
+.\gradlew.bat build
+
+The resulting JAR files are generated in the individual <platform>/build/libs directories.
+
+Core technology
+
+Movement simulation engine
+
+LightningGrim uses a detailed movement simulation engine designed to reproduce the possible movements of a legitimate player, including walking, swimming, knockback, cobwebs, bubble columns, and riding entities.
+
+The engine accounts for client-version differences, collision order, ViaVersion replacements, waterlogged blocks, and vanilla collision boxes.
+
+Asynchronous and multithreaded design
+
+Movement checks and most listeners run asynchronously where safe, allowing the anticheat to scale to large servers while maintaining carefully designed thread safety.
+
+World replication
+
+The anticheat maintains a per-player world representation based on chunk data, block placements, and block changes. This allows safe asynchronous access, lag compensation, and correct handling of client-sided or packet-based blocks.
+
+Latency and inventory compensation
+
+World updates and inventory state are tracked and compensated for latency, reducing false positives caused by delayed packets, ghost blocks, or server-side changes that have not yet reached the client.
+
+Security-focused design
+
+The prediction and validation systems are designed around the complete set of legitimate client behaviours rather than relying on obscurity. No anticheat can guarantee detection of every cheat, so configuration, testing, and human review remain important.
+
+Security
+
+Please do not publicly disclose working bypasses before they can be investigated. See SECURITY.md for responsible disclosure information.
+
+License and attribution
+
+This repository contains code derived from GrimAC and LightningGrim. All original copyright notices, license files, and attribution requirements must be preserved. See LICENSE for the complete license terms.
+
+This project is provided without warranty. The maintainers are not responsible for server issues, false positives, or misuse of the software.
