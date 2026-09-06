@@ -1,0 +1,4 @@
+name: LightningGrimBridge
+main: ac.grim.lightninggrim.bridge.bungee.BungeeBridgePlugin
+version: ${version}
+author: Axionize
