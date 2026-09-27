@@ -16,6 +16,8 @@ alerts:
         receive: false
 
 # Bridge ban di rete opzionale e autenticato. Usa lo stesso segreto Base64 da almeno 32 byte su backend e proxy.
+# Le richieste di ban viaggiano sulla connessione di un giocatore online casuale: assicurati che almeno un
+# giocatore diverso dal target sia online su questo backend quando la richiesta viene inviata.
 proxy-ban:
     enabled: false
     backend-id: "backend-1"

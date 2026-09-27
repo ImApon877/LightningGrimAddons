@@ -60,52 +60,78 @@ public class PunishmentManager implements ConfigReloadable {
             }
 
             for (Object s : punish) {
-                LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) s;
+                // Parse each group independently: one malformed group must not
+                // abort the loop and silently disable every later group.
+                try {
+                    LinkedHashMap<String, Object> map = (LinkedHashMap<String, Object>) s;
 
-                List<String> checks = (List<String>) map.getOrDefault("checks", new ArrayList<>());
-                List<String> commands = (List<String>) map.getOrDefault("commands", new ArrayList<>());
-                int removeViolationsAfter = (int) map.getOrDefault("remove-violations-after", 300);
+                    List<String> checks = (List<String>) map.getOrDefault("checks", new ArrayList<>());
+                    List<String> commands = (List<String>) map.getOrDefault("commands", new ArrayList<>());
+                    int removeViolationsAfter = (int) map.getOrDefault("remove-violations-after", 300);
 
-                List<ParsedCommand> parsed = new ArrayList<>();
-                List<AbstractCheck> checksList = new ArrayList<>();
-                List<AbstractCheck> excluded = new ArrayList<>();
-                for (String command : checks) {
-                    command = command.toLowerCase(Locale.ROOT);
-                    boolean exclude = false;
-                    if (command.startsWith("!")) {
-                        exclude = true;
-                        command = command.substring(1);
-                    }
-                    for (AbstractCheck check : player.checkManager.allChecks.values()) { // o(n) * o(n)?
-                        if (check.getCheckName() != null &&
-                                (check.getCheckName().toLowerCase(Locale.ROOT).contains(command)
-                                        || check.getAlternativeName().toLowerCase(Locale.ROOT).contains(command))) { // Some checks have equivalent names like AntiKB and AntiKnockback
-                            if (exclude) {
-                                excluded.add(check);
-                            } else {
-                                checksList.add(check);
-                                check.setEnabled(true);
+                    List<ParsedCommand> parsed = new ArrayList<>();
+                    List<AbstractCheck> checksList = new ArrayList<>();
+                    List<AbstractCheck> excluded = new ArrayList<>();
+                    for (String command : checks) {
+                        command = command.toLowerCase(Locale.ROOT);
+                        boolean exclude = false;
+                        if (command.startsWith("!")) {
+                            exclude = true;
+                            command = command.substring(1);
+                        }
+                        for (AbstractCheck check : player.checkManager.allChecks.values()) { // o(n) * o(n)?
+                            if (check.getCheckName() != null &&
+                                    (check.getCheckName().toLowerCase(Locale.ROOT).contains(command)
+                                            || check.getAlternativeName().toLowerCase(Locale.ROOT).contains(command))) { // Some checks have equivalent names like AntiKB and AntiKnockback
+                                if (exclude) {
+                                    excluded.add(check);
+                                } else {
+                                    checksList.add(check);
+                                    check.setEnabled(true);
+                                }
                             }
                         }
+                        for (AbstractCheck check : excluded) checksList.remove(check);
                     }
-                    for (AbstractCheck check : excluded) checksList.remove(check);
+
+                    for (String command : commands) {
+                        ParsedCommand parsedCommand = parsePunishmentCommand(command);
+                        if (parsedCommand != null) parsed.add(parsedCommand);
+                    }
+
+                    groups.add(new PunishGroup(checksList, parsed, removeViolationsAfter * 1000));
+                } catch (Exception groupError) {
+                    LogUtil.warn("Skipping an invalid punishments.yml group (fix or remove it): " + groupError);
                 }
-
-                for (String command : commands) {
-                    String firstNum = command.substring(0, command.indexOf(":"));
-                    String secondNum = command.substring(command.indexOf(":"), command.indexOf(" "));
-
-                    int threshold = Integer.parseInt(firstNum);
-                    int interval = Integer.parseInt(secondNum.substring(1));
-                    String commandString = command.substring(command.indexOf(" ") + 1);
-
-                    parsed.add(new ParsedCommand(threshold, interval, commandString));
-                }
-
-                groups.add(new PunishGroup(checksList, parsed, removeViolationsAfter * 1000));
             }
         } catch (Exception e) {
             LogUtil.error("Error while loading punishments.yml! This is likely your fault!", e);
+        }
+    }
+
+    /**
+     * Parse a {@code "<threshold>:<interval> <command>"} entry. Returns null
+     * (with a warning naming the entry) for malformed input instead of
+     * throwing — a single typo used to abort the whole reload via the
+     * unchecked StringIndexOutOfBoundsException/NumberFormatException paths.
+     */
+    private static @Nullable ParsedCommand parsePunishmentCommand(String command) {
+        String trimmed = command.trim();
+        int colon = trimmed.indexOf(':');
+        int space = trimmed.indexOf(' ');
+        if (colon <= 0 || space < colon + 2 || space == trimmed.length() - 1) {
+            LogUtil.warn("Invalid punishment command '" + command + "' (expected '<threshold>:<interval> <command>') — skipped.");
+            return null;
+        }
+        try {
+            int threshold = Integer.parseInt(trimmed.substring(0, colon).trim());
+            int interval = Integer.parseInt(trimmed.substring(colon + 1, space).trim());
+            if (threshold < 0 || interval < 0) throw new NumberFormatException();
+            String commandString = trimmed.substring(space + 1).trim();
+            return new ParsedCommand(threshold, interval, commandString);
+        } catch (NumberFormatException e) {
+            LogUtil.warn("Invalid punishment command '" + command + "' (threshold/interval must be non-negative integers) — skipped.");
+            return null;
         }
     }
 

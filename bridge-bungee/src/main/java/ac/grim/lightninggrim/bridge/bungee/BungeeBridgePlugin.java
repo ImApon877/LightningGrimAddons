@@ -1,5 +1,6 @@
 package ac.grim.lightninggrim.bridge.bungee;
 
+import ac.grim.lightninggrim.bridge.BanBridge;
 import ac.grim.lightninggrim.bridge.BridgeProtocol;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.Server;
@@ -12,75 +13,73 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.GeneralSecurityException;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class BungeeBridgePlugin extends Plugin implements Listener {
-    private final ConcurrentHashMap<UUID, Long> acceptedRequests = new ConcurrentHashMap<>();
-    private byte[] secret;
-    private Set<String> allowedBackends = Set.of();
-    private long requestTtlMs;
-    private long replayTtlMs;
-    private String banCommand;
-    private boolean enabled;
+    private final BanBridge bridge = new BanBridge() {
+        @Override
+        protected boolean dispatch(String command, BridgeProtocol.BanRequest request, String backend) {
+            // dispatchCommand is thread-safe on BungeeCord, so this can stay on the netty thread.
+            ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), command);
+            getLogger().info("Accepted LightningGrim ban request " + request.requestId() + " from " + backend
+                    + " for " + request.playerName() + " (" + request.checkKey() + ", VL " + request.violations() + ")");
+            return true;
+        }
+    };
 
     @Override
     public void onEnable() {
-        enabled = loadConfig();
+        loadConfig();
         ProxyServer.getInstance().registerChannel(BridgeProtocol.CHANNEL);
         ProxyServer.getInstance().getPluginManager().registerListener(this, this);
-        if (enabled) getLogger().info("LightningGrim bridge enabled for backends: " + String.join(", ", allowedBackends));
-        else getLogger().warning("LightningGrim bridge is disabled; configure config.properties before accepting network bans.");
+        if (bridge.isEnabled()) {
+            getLogger().info("LightningGrim bridge enabled for backends: " + String.join(", ", bridge.settings().allowedBackends()));
+        } else {
+            getLogger().warning("LightningGrim bridge is disabled; configure config.properties before accepting network bans.");
+        }
     }
 
     @EventHandler
     public void onPluginMessage(PluginMessageEvent event) {
-        if (!event.getTag().equals(BridgeProtocol.CHANNEL) || !enabled || !(event.getSender() instanceof Server source)) return;
+        if (!event.getTag().equals(BridgeProtocol.CHANNEL) || !bridge.isEnabled()
+                || !(event.getSender() instanceof Server source)) return;
         event.setCancelled(true);
         String backend = source.getInfo().getName();
-        if (!allowedBackends.contains(backend)) return;
-        try {
-            BridgeProtocol.BanRequest request = BridgeProtocol.decode(event.getData(), secret);
-            long now = System.currentTimeMillis();
-            if (!request.backendId().equals(backend) || !request.playerName().matches("[A-Za-z0-9_]{1,16}")
-                    || Math.abs(now - request.issuedAt()) > requestTtlMs) return;
-            acceptedRequests.entrySet().removeIf(entry -> now - entry.getValue() > replayTtlMs);
-            if (acceptedRequests.putIfAbsent(request.requestId(), now) != null) return;
-            ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(),
-                    banCommand.replace("%player%", request.playerName()));
-            getLogger().info("Accepted LightningGrim ban request " + request.requestId() + " from " + backend + " for " + request.playerName());
-        } catch (IOException | GeneralSecurityException exception) {
-            getLogger().warning("Rejected malformed LightningGrim bridge request from " + backend);
-        }
+        bridge.handlePayload(backend, event.getData(), System.currentTimeMillis());
     }
 
-    private boolean loadConfig() {
+    private void loadConfig() {
         try {
             Path folder = getDataFolder().toPath();
             Files.createDirectories(folder);
             Path config = folder.resolve("config.properties");
             if (Files.notExists(config)) {
-                Files.writeString(config, "enabled=false\nhmacSecretBase64=\nallowedBackends=\nrequestTtlMs=10000\nreplayTtlMs=60000\nbanCommand=litebans:ban %player% Automated LightningGrim network ban\n");
+                Files.writeString(config, BanBridge.DEFAULT_CONFIG);
                 getLogger().warning("Created bridge configuration at " + config + "; configure it before enabling the bridge.");
-                return false;
+                return;
             }
             Properties properties = new Properties();
-            try (InputStream input = Files.newInputStream(config)) { properties.load(input); }
-            if (!Boolean.parseBoolean(properties.getProperty("enabled", "false"))) return false;
-            secret = Base64.getDecoder().decode(properties.getProperty("hmacSecretBase64", ""));
-            allowedBackends = Set.of(properties.getProperty("allowedBackends", "").split(","));
-            requestTtlMs = Long.parseLong(properties.getProperty("requestTtlMs", "10000"));
-            replayTtlMs = Long.parseLong(properties.getProperty("replayTtlMs", "60000"));
-            banCommand = properties.getProperty("banCommand", "").trim();
-            return secret.length >= 32 && !allowedBackends.isEmpty() && !allowedBackends.contains("")
-                    && requestTtlMs > 0 && replayTtlMs >= requestTtlMs && banCommand.contains("%player%");
-        } catch (Exception exception) {
+            try (InputStream input = Files.newInputStream(config)) {
+                properties.load(input);
+            }
+            BanBridge.ConfigResult result = BanBridge.parseSettings(toStringMap(properties));
+            if (result.ok()) {
+                bridge.apply(result.settings());
+            } else {
+                getLogger().warning("LightningGrim bridge config is invalid and stays disabled: " + result.error());
+            }
+        } catch (IOException exception) {
             getLogger().warning("Unable to load LightningGrim bridge configuration: " + exception.getMessage());
-            return false;
         }
+    }
+
+    private static Map<String, String> toStringMap(Properties properties) {
+        Map<String, String> map = new HashMap<>();
+        for (String name : properties.stringPropertyNames()) {
+            map.put(name, properties.getProperty(name));
+        }
+        return map;
     }
 }

@@ -45,6 +45,8 @@ public class DiscordManager implements StartableInitable, ReloadableInitable {
     private static final ConcurrentLinkedDeque<Pair<HttpRequest, CompletableFuture<Boolean>>> requests = new ConcurrentLinkedDeque<>();
     private static final AtomicBoolean taskStarted = new AtomicBoolean();
     private static final AtomicBoolean sending = new AtomicBoolean();
+    /** Cap the 429 backoff so a bogus header cannot silence alerts for hours. */
+    private static final long MAX_RATE_LIMIT_BACKOFF_MS = 60_000;
     private static long rateLimitedUntil;
     private URI url;
     private int embedColor;
@@ -218,22 +220,24 @@ public class DiscordManager implements StartableInitable, ReloadableInitable {
         if (pair != null && rateLimitedUntil < System.currentTimeMillis() && !sending.getAndSet(true)) {
             HttpRequest request = pair.first();
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).whenComplete((response, throwable) -> {
+                // Always drain the entry and release the sending flag, even on
+                // failure — otherwise the queue head blocks forever and the
+                // sending flag wedges, silently dropping every later webhook.
+                requests.remove(pair);
+                sending.set(false);
+
                 if (throwable != null) {
-                    sending.set(false);
                     LogUtil.error("Exception caught while sending a Discord webhook alert", throwable);
+                    pair.second().completeExceptionally(throwable);
                     return;
                 }
 
                 if (response != null && response.statusCode() == 429) {
-                    sending.set(false);
-                    rateLimitedUntil = Math.max(response.headers().firstValueAsLong("X-RateLimit-Reset").getAsLong() * 1000, rateLimitedUntil);
+                    applyRateLimit(response);
                     return;
                 }
 
-                requests.remove(pair);
-                sending.set(false);
-
-                // TODO: handle 503 (Service Unavailable)?
+                // TODO: handle 503 (Service Unavailable) with a bounded retry?
                 if (response != null && response.statusCode() >= 400) {
                     LogUtil.error("Encountered status code " + response.statusCode() + " with body " + response.body() + " and headers " + response.headers().map() + " while sending a Discord webhook alert.");
                     pair.second().complete(false);
@@ -242,5 +246,18 @@ public class DiscordManager implements StartableInitable, ReloadableInitable {
                 }
             });
         }
+    }
+
+    /**
+     * Compute the rate-limit backoff defensively: global limits and proxies
+     * may omit the header (an absent value used to throw inside whenComplete
+     * and wedge the sending flag), and a bogus value must not brick alerts.
+     */
+    private static void applyRateLimit(HttpResponse<String> response) {
+        long now = System.currentTimeMillis();
+        long resetAtSec = response.headers().firstValueAsLong("X-RateLimit-Reset")
+                .orElseGet(() -> now / 1000 + response.headers().firstValueAsLong("X-RateLimit-Reset-After").orElse(5L));
+        long backoffUntil = Math.min(resetAtSec * 1000, now + MAX_RATE_LIMIT_BACKOFF_MS);
+        rateLimitedUntil = Math.max(backoffUntil, now + 1); // guard against clock skew / hot-looping
     }
 }

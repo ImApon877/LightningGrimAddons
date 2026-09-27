@@ -129,10 +129,10 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
             String after = ensureLightningCombatPunishmentGroups(before);
             if (!after.equals(before)) {
                 Files.writeString(punishments.toPath(), after);
-                LogUtil.info("Added missing WallHit/EntityPierce punishment groups to punishments.yml");
+                LogUtil.info("Added missing [proxy-ban] command to existing punishments.yml groups");
             }
         } catch (IOException e) {
-            LogUtil.warn("Failed to add Lightning combat punishment groups: " + e);
+            LogUtil.warn("Failed to add [proxy-ban] to punishments.yml: " + e);
         }
     }
 
@@ -143,12 +143,8 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
         if (!configString.endsWith("\n")) out.append('\n');
 
         boolean changed = false;
-        if (!hasPunishmentGroup(configString, "WallHit")) {
-            out.append('\n').append(WALL_HIT_PUNISHMENT_GROUP);
-            changed = true;
-        }
-        if (!hasPunishmentGroup(configString, "EntityPierce")) {
-            out.append('\n').append(ENTITY_PIERCE_PUNISHMENT_GROUP);
+        if (!configString.contains("[proxy-ban]")) {
+            out.append("\n").append(PROXY_BAN_COMMAND_BLOCK);
             changed = true;
         }
 
@@ -159,32 +155,11 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
         return Pattern.compile("(?m)^Punishments:\\s*$").matcher(configString).find();
     }
 
-    private static boolean hasPunishmentGroup(String configString, String groupName) {
-        return Pattern.compile("(?m)^  " + Pattern.quote(groupName) + ":\\s*$").matcher(configString).find();
-    }
+    private static final String PROXY_BAN_COMMAND_BLOCK = """
 
-    private static final String WALL_HIT_PUNISHMENT_GROUP = """
-              WallHit:
-                remove-violations-after: 300
-                checks:
-                  - "WallHit"
-                commands:
-                  - "10:5 [alert]"
-                  - "10:5 [webhook]"
-                  - "10:5 [proxy]"
-                  - "10:5 [log]"
-            """;
+              # Comment out or delete the line below once you configure the proxy bridge (docs/proxy-bridge.md).
+              20:40 [proxy-ban]
 
-    private static final String ENTITY_PIERCE_PUNISHMENT_GROUP = """
-              EntityPierce:
-                remove-violations-after: 300
-                checks:
-                  - "EntityPierce"
-                commands:
-                  - "15:10 [alert]"
-                  - "15:10 [webhook]"
-                  - "15:10 [proxy]"
-                  - "15:10 [log]"
             """;
 
     private void upgrade() {
