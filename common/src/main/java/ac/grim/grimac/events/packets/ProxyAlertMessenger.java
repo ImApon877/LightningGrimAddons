@@ -2,6 +2,7 @@ package ac.grim.grimac.events.packets;
 
 import ac.grim.grimac.GrimAPI;
 import ac.grim.lightninggrim.bridge.BridgeProtocol;
+import ac.grim.grimac.platform.api.player.PlatformPlayer;
 import ac.grim.grimac.utils.anticheat.LogUtil;
 import ac.grim.grimac.utils.anticheat.MessageUtil;
 import com.github.retrooper.packetevents.PacketEvents;
@@ -56,7 +57,15 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
         out.writeShort(messageBytes.toByteArray().length);
         out.write(messageBytes.toByteArray());
 
-        Iterables.getFirst(GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers(), null).sendPluginMessage("BungeeCord", out.toByteArray());
+        // canSendAlerts() checked emptiness a moment ago, but the last player
+        // can leave in between — dereferencing the first() directly crashed
+        // the punishment thread with an NPE in that race.
+        PlatformPlayer carrier = Iterables.getFirst(GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers(), null);
+        if (carrier == null) {
+            LogUtil.warn("Proxy alert dropped: no online player is available to carry the plugin message.");
+            return;
+        }
+        carrier.sendPluginMessage("BungeeCord", out.toByteArray());
     }
 
     public static boolean canSendAlerts() {

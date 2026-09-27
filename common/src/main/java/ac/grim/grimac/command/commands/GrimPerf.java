@@ -1,6 +1,8 @@
 package ac.grim.grimac.command.commands;
 
+import ac.grim.grimac.GrimAPI;
 import ac.grim.grimac.platform.api.manager.cloud.CloudPlatformCommandArguments;
+import ac.grim.grimac.platform.api.player.PlatformPlayer;
 import ac.grim.grimac.platform.api.sender.Sender;
 import ac.grim.grimac.predictionengine.MovementCheckRunner;
 import net.kyori.adventure.text.Component;
@@ -38,17 +40,17 @@ public class GrimPerf {
     private void handlePerformance(@NotNull CommandContext<Sender> context) {
         Sender sender = context.sender();
 
-        double millis = MovementCheckRunner.predictionNanos / 1000000;
-        double longMillis = MovementCheckRunner.longPredictionNanos / 1000000;
+        double millis = MovementCheckRunner.predictionNanos / 1_000_000;
+        double longMillis = MovementCheckRunner.longPredictionNanos / 1_000_000;
 
         Component message1 = Component.text()
                 .append(Component.text("Milliseconds per prediction (avg. 500): ", NamedTextColor.GRAY))
-                .append(Component.text(millis, NamedTextColor.WHITE))
+                .append(Component.text(String.format(Locale.ROOT, "%.4f", millis), NamedTextColor.WHITE))
                 .build();
 
         Component message2 = Component.text()
                 .append(Component.text("Milliseconds per prediction (avg. 20k): ", NamedTextColor.GRAY))
-                .append(Component.text(longMillis, NamedTextColor.WHITE))
+                .append(Component.text(String.format(Locale.ROOT, "%.4f", longMillis), NamedTextColor.WHITE))
                 .build();
 
         sender.sendMessage(message1);
@@ -57,13 +59,15 @@ public class GrimPerf {
 
     private void handleStats(@NotNull CommandContext<Sender> context) {
         Sender sender = context.sender();
-        double tps = ac.grim.grimac.GrimAPI.INSTANCE.getPlatformServer().getTPS();
+        double tps = GrimAPI.INSTANCE.getPlatformServer().getTPS();
         String formattedTps = Double.isFinite(tps) ? String.format(Locale.ROOT, "%.2f", tps) : "N/A";
-        int onlinePlayers = ac.grim.grimac.GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers().size();
+        int onlinePlayers = 0;
+        for (PlatformPlayer ignored : GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers()) onlinePlayers++;
         double predictionMillis = MovementCheckRunner.predictionNanos / 1_000_000D;
 
         sender.sendMessage(Component.text("LightningGrim statistics", NamedTextColor.AQUA));
         sender.sendMessage(Component.text("TPS: " + formattedTps + " | Tracked players: " + onlinePlayers, NamedTextColor.GRAY));
-        sender.sendMessage(Component.text("Prediction average (500): " + predictionMillis + " ms", NamedTextColor.GRAY));
+        sender.sendMessage(Component.text("Prediction average (500): "
+                + String.format(Locale.ROOT, "%.4f", predictionMillis) + " ms", NamedTextColor.GRAY));
     }
 }
