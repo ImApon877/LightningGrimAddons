@@ -129,7 +129,7 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
             String after = ensureLightningCombatPunishmentGroups(before);
             if (!after.equals(before)) {
                 Files.writeString(punishments.toPath(), after);
-                LogUtil.info("Added missing [proxy-ban] command to existing punishments.yml groups");
+                LogUtil.info("Updated the [proxy-ban] hint in punishments.yml");
             }
         } catch (IOException e) {
             LogUtil.warn("Failed to add [proxy-ban] to punishments.yml: " + e);
@@ -139,27 +139,32 @@ public class ConfigManagerFileImpl implements ConfigManager, BasicReloadable {
     static String ensureLightningCombatPunishmentGroups(String configString) {
         if (!hasPunishmentsRoot(configString)) return configString;
 
+        // Earlier builds appended a bare "20:40 [proxy-ban]" line, which is not valid YAML and made the
+        // whole configuration fail to load: replace it with the hint below.
+        if (configString.contains(BROKEN_PROXY_BAN_BLOCK)) {
+            return configString.replace(BROKEN_PROXY_BAN_BLOCK, PROXY_BAN_HINT);
+        }
+        if (configString.contains("[proxy-ban]")) return configString;
+
         StringBuilder out = new StringBuilder(configString);
         if (!configString.endsWith("\n")) out.append('\n');
-
-        boolean changed = false;
-        if (!configString.contains("[proxy-ban]")) {
-            out.append("\n").append(PROXY_BAN_COMMAND_BLOCK);
-            changed = true;
-        }
-
-        return changed ? out.toString() : configString;
+        return out.append("\n").append(PROXY_BAN_HINT).toString();
     }
 
     private static boolean hasPunishmentsRoot(String configString) {
         return Pattern.compile("(?m)^Punishments:\\s*$").matcher(configString).find();
     }
 
-    private static final String PROXY_BAN_COMMAND_BLOCK = """
+    // Network bans are opt-in (docs/proxy-bridge.md), so only a comment is added. Because it mentions
+    // [proxy-ban], the check above sees the file as handled and the hint is added only once.
+    private static final String PROXY_BAN_HINT = """
+              # Proxy bridge (docs/proxy-bridge.md): to request network bans, add a command such as
+              # - "20:40 [proxy-ban]" to the commands of a punishment group.
+            """;
 
+    private static final String BROKEN_PROXY_BAN_BLOCK = """
               # Comment out or delete the line below once you configure the proxy bridge (docs/proxy-bridge.md).
               20:40 [proxy-ban]
-
             """;
 
     private void upgrade() {
