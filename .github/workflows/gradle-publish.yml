@@ -38,6 +38,10 @@ on:
             - '**.kt'
             - '**.kts'
             - '**.toml'
+permissions:
+    contents: write
+    packages: write
+
 jobs:
     call-build-workflow:
         uses: ./.github/workflows/build-and-publish.yml

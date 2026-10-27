@@ -37,21 +37,20 @@ public final class ProxyBanMessenger {
             return;
         }
 
-        var onlinePlayers = GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers();
-        PlatformPlayer carrier = null;
-        for (PlatformPlayer candidate : onlinePlayers) {
-            UUID uuid = candidate.getUniqueId();
-            if (uuid != null && !uuid.equals(player.getUniqueId())) {
-                carrier = candidate;
-                break;
+        // The request travels backend -> proxy on a player's server connection: the client never sees or
+        // forwards it (the proxy plugins consume the channel), so the target's own connection is a safe
+        // carrier. Using only other players skipped every ban while the cheater was alone on the server.
+        PlatformPlayer carrier = player.platformPlayer;
+        if (carrier == null) {
+            for (PlatformPlayer candidate : GrimAPI.INSTANCE.getPlatformPlayerFactory().getOnlinePlayers()) {
+                if (candidate.getUniqueId() != null) {
+                    carrier = candidate;
+                    break;
+                }
             }
         }
         if (carrier == null) {
-            // The ban request piggybacks on a player connection; with only the
-            // cheater online there is no trustworthy carrier. The request will
-            // be retried naturally if more players join and the cheater flags again.
-            LogUtil.warn("Proxy ban for " + player.getName()
-                    + " skipped: no suitable online carrier (a player other than the target must be online).");
+            LogUtil.warn("Proxy ban for " + player.getName() + " skipped: no online player connection to the proxy.");
             return;
         }
 

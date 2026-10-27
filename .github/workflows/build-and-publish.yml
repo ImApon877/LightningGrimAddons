@@ -39,10 +39,11 @@ on:
                 required: false
             MODRINTH_TOKEN:
                 required: false
+            # Only used by the upstream build server; the steps below skip publishing when they are missing.
             BUILD_UPDATE_TOKEN:
-                required: true
+                required: false
             BUILD_UPDATE_URL:
-                required: true
+                required: false
 
 jobs:
     build:
@@ -146,6 +147,17 @@ jobs:
                   name: grimac-fabric
                   path: ${{ github.workspace }}/fabric/build/libs/grimac-fabric-${{ env.BUILD_VERSION }}.jar
                   if-no-files-found: error
+
+            - name: Attach jars to the GitHub release
+              if: ${{ inputs.is-release-build }}
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      bukkit/build/libs/grimac-bukkit-${{ env.BUILD_VERSION }}.jar
+                      fabric/build/libs/grimac-fabric-${{ env.BUILD_VERSION }}.jar
+                      bridge-velocity/build/libs/grimac-bridge-velocity-${{ env.BUILD_VERSION }}.jar
+                      bridge-bungee/build/libs/grimac-bridge-bungee-${{ env.BUILD_VERSION }}.jar
+                  fail_on_unmatched_files: true
 
             #------------------------------------------------------------------
             #  Generate/Prepare Changelog

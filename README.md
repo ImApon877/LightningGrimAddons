@@ -24,18 +24,13 @@ This fork focuses on performance improvements, reach accuracy, block placement c
 >
 > GrimAC, LightningGrim, and all related names, trademarks, and copyrights belong to their respective owners.
 
-## Changes in this fork
+## What this fork adds
 
-- **WallHit** – Detects attacks through blocks.
-- **EntityPierce** – Detects attacks through other entities.
-- Optimised reach, hitbox, and collision calculations.
-- Bukkit piston-event optimisations.
-- Packet-order checks for NoSlow, AutoBlock, and similar exploits.
-- Inventory-interaction validation.
-- Discord webhook and punishment integrations.
-- Violation history and staff commands.
-- BungeeCord and Velocity bridge modules.
-- Additional compatibility and performance improvements.
+On top of [LightningGrim](https://github.com/Axionize/LightningGrim), which already brings checks such as **WallHit**, **EntityPierce** and the **PacketOrder** family, this fork adds:
+
+- **Network bans through the proxy** – a `[proxy-ban]` punishment command that sends an authenticated (HMAC-SHA256) ban request to the proxy.
+- **BungeeCord and Velocity bridge plugins** that verify those requests (backend allow-list, expiry, replay protection) and run the configured ban command. See [docs/proxy-bridge.md](docs/proxy-bridge.md).
+- `/lgbridge reload` on the proxy to reload the bridge configuration.
 
 ## Downloads
 

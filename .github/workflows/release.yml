@@ -4,6 +4,10 @@ on:
     release:
         types: [published]
 
+permissions:
+    contents: write # attach the jars to the release
+    packages: write
+
 jobs:
     call-release-workflow:
         uses: ./.github/workflows/build-and-publish.yml
