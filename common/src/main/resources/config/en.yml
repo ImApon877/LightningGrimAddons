@@ -16,8 +16,8 @@ alerts:
         receive: false
 
 # Optional authenticated network-ban bridge. Use the same Base64-encoded 32-byte secret on the backend and proxy.
-# Ban requests piggyback on a random online player's connection, so at least one player other than the
-# banned target must be online on this backend when the request fires.
+# Ban requests travel to the proxy on the banned player's own connection (the proxy consumes them, the
+# client never sees them), so they work even when that player is alone on the backend.
 proxy-ban:
     enabled: false
     backend-id: "backend-1"
