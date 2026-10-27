@@ -11,7 +11,7 @@ import ac.grim.grimac.checks.impl.aim.processor.AimProcessor;
 import ac.grim.grimac.checks.impl.misc.ClientBrand;
 import ac.grim.grimac.checks.impl.misc.TransactionOrder;
 import ac.grim.grimac.checks.impl.packetorder.PacketOrderProcessor;
-import ac.grim.grimac.events.packets.CheckManagerListener;
+import ac.grim.grimac.events.packets.BlockInteractionHandler;
 import ac.grim.grimac.events.packets.PacketEntityReplication;
 import ac.grim.grimac.manager.*;
 import ac.grim.grimac.manager.player.features.FeatureManagerImpl;
@@ -446,8 +446,8 @@ public class GrimPlayer implements GrimUser {
             } while (data.first() != id);
 
             // A transaction means a new tick, so handle any block interactions
-            CheckManagerListener.handleQueuedPlaces(this, false, 0, 0, System.currentTimeMillis());
-            CheckManagerListener.handleQueuedBreaks(this, false, 0, 0, System.currentTimeMillis());
+            BlockInteractionHandler.handleQueuedPlaces(this, false, 0, 0, System.currentTimeMillis());
+            BlockInteractionHandler.handleQueuedBreaks(this, false, 0, 0, System.currentTimeMillis());
             latencyUtils.handleNettySyncTransaction(lastTransactionReceived.get());
         }
 

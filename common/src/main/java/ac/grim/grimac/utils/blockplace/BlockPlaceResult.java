@@ -1,6 +1,6 @@
 package ac.grim.grimac.utils.blockplace;
 
-import ac.grim.grimac.events.packets.CheckManagerListener;
+import ac.grim.grimac.events.packets.BlockInteractionHandler;
 import ac.grim.grimac.utils.anticheat.update.BlockPlace;
 import ac.grim.grimac.utils.blockstate.helper.BlockFaceHelper;
 import ac.grim.grimac.utils.collisions.CollisionData;
@@ -1076,7 +1076,7 @@ public enum BlockPlaceResult {
 
     POWDER_SNOW_BUCKET((player, place) -> {
         place.set();
-        CheckManagerListener.setPlayerItem(player, place.hand, ItemTypes.BUCKET);
+        BlockInteractionHandler.setPlayerItem(player, place.hand, ItemTypes.BUCKET);
     }, ItemTypes.POWDER_SNOW_BUCKET),
 
     GAME_MASTER((player, place) -> {
