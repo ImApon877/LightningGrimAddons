@@ -79,7 +79,9 @@ dependencies {
         isTransitive = false // messes with guava otherwise
     }
 
-    compileOnly(libs.floodgate.api)
+    compileOnly(libs.floodgate.api) {
+        exclude(group = "org.geysermc", module = "common") // this snapshot is no longer published
+    }
     compileOnly(libs.viaversion)
     compileOnly(libs.viabackwards)
     compileOnly(libs.netty)

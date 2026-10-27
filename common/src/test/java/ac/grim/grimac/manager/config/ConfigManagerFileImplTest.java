@@ -1,14 +1,18 @@
 package ac.grim.grimac.manager.config;
 
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigManagerFileImplTest {
 
     @Test
-    void addsProxyBanCommandToGroups() {
+    void addsProxyBanHintWithoutChangingGroups() {
         String input = """
                 Punishments:
                   Reach:
@@ -24,7 +28,32 @@ class ConfigManagerFileImplTest {
 
         assertTrue(output.contains("  Reach:\n"));
         assertTrue(output.contains("      - \"Reach\"\n"));
-        assertTrue(output.contains("20:40 [proxy-ban]\n"));
+        assertTrue(output.contains("20:40 [proxy-ban]"));
+        // Network bans are opt-in: the groups must be unchanged and the file must stay valid YAML.
+        assertEquals((Object) new Yaml().load(input), new Yaml().load(output));
+    }
+
+    @Test
+    void repairsBareProxyBanLineFromEarlierBuilds() {
+        String input = """
+                Punishments:
+                  Reach:
+                    remove-violations-after: 450
+                    checks:
+                      - "Reach"
+                    commands:
+                      - "1:1 [log]"
+
+                  # Comment out or delete the line below once you configure the proxy bridge (docs/proxy-bridge.md).
+                  20:40 [proxy-ban]
+                """;
+
+        String output = ConfigManagerFileImpl.ensureLightningCombatPunishmentGroups(input);
+
+        assertFalse(output.contains("\n  20:40 [proxy-ban]"));
+        Map<String, Object> parsed = new Yaml().load(output);
+        assertTrue(((Map<?, ?>) parsed.get("Punishments")).containsKey("Reach"));
+        assertEquals(output, ConfigManagerFileImpl.ensureLightningCombatPunishmentGroups(output));
     }
 
     @Test
