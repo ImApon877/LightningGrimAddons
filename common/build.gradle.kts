@@ -70,6 +70,8 @@ dependencies {
     api(libs.adventure.text.minimessage)
     api(libs.jetbrains.annotations)
     api(libs.hikaricp)
+    // HikariCP logs through slf4j; without a provider slf4j prints "No SLF4J providers were found" at startup.
+    runtimeOnly(libs.slf4j.nop)
     api(libs.grim.api)
     api(libs.grim.internal)
     compileOnly(libs.grim.internal.shims)

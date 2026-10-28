@@ -47,7 +47,9 @@ public class BukkitPlatformPlayer extends BukkitGrimEntity implements PlatformPl
         this.inventory = new BukkitPlatformInventory(bukkitPlayer);
         if (CommonGrimArguments.USE_CHAT_FAST_BYPASS.value()) {
             Object channel = PacketEvents.getAPI().getProtocolManager().getChannel(bukkitPlayer.getUniqueId());
-            this.user = PacketEvents.getAPI().getProtocolManager().getUser(channel);
+            // The channel is already gone when this is created during disconnect handling; getUser(null) would
+            // throw and abort PlayerDataManager.onDisconnect before the player is removed from the caches.
+            this.user = channel == null ? null : PacketEvents.getAPI().getProtocolManager().getUser(channel);
         } else {
             this.user = null;
         }

@@ -11,6 +11,8 @@ tasks.named<ShadowJar>("shadowJar") {
         // ServiceLoader, so minimize() strips it and adventure's static init then throws
         // (ServiceConfigurationError) on enable. Keep the gson serializer's classes.
         exclude(dependency("net.kyori:adventure-text-serializer-gson:.*"))
+        // Same for the slf4j provider, which is also found through ServiceLoader.
+        exclude(dependency("org.slf4j:slf4j-nop:.*"))
     }
     archiveFileName = "${rootProject.name}-${project.name}-${rootProject.version}.jar"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE

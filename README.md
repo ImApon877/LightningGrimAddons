@@ -32,9 +32,27 @@ On top of [LightningGrim](https://github.com/Axionize/LightningGrim), which alre
 - **BungeeCord and Velocity bridge plugins** that verify those requests (backend allow-list, expiry, replay protection) and run the configured ban command. See [docs/proxy-bridge.md](docs/proxy-bridge.md).
 - `/lgbridge reload` on the proxy to reload the bridge configuration.
 
+## What's new
+
+### 2.3.74-addons.3
+- No more `No SLF4J providers were found` errors at startup.
+- Fixed a `NullPointerException` when a player's connection closed unexpectedly, which skipped the rest of the disconnect cleanup.
+
+### 2.3.74-addons.2
+- **`[proxy]` alerts and `[proxy-ban]` never worked**: the proxy was never detected (reading `spigot.yml` / `paper-global.yml` always failed). Fixed.
+- `[proxy-ban]` also works when the banned player is alone on the backend.
+- Git history connected to LightningGrim, so upstream updates can be merged; three large classes split.
+
+### 2.3.74-addons.1
+- The configuration failed to load on fresh installs (an invalid line was added to `punishments.yml`). Fixed, and broken files are repaired.
+- The Velocity bridge failed to load (`NoClassDefFoundError`). Fixed.
+- `/lgbridge reload` on the proxy; the build works from a clean checkout and in GitHub Actions.
+
+Tested on Paper 1.21.11 behind Velocity 3.5.1 with bot players: fly, speed, NoFall, timer, impossible place cursor, reach and out-of-hitbox interactions are flagged, legit movement stays well below the default alert thresholds, and a cheater alone on a backend gets a network ban accepted by the proxy.
+
 ## Downloads
 
-Releases and development builds will be published on the [GitHub Releases page](https://github.com/ImApon877/LightningGrimAddons/releases).
+Download the latest build from the [latest release](https://github.com/ImApon877/LightningGrimAddons/releases/latest): `grimac-bukkit-*.jar` for Paper/Spigot/Folia, `grimac-fabric-*.jar` for Fabric, and `grimac-bridge-velocity-*.jar` / `grimac-bridge-bungee-*.jar` for network bans (see [docs/proxy-bridge.md](docs/proxy-bridge.md)).
 
 Always test a new build on a staging server before using it in production.
 
