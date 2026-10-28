@@ -15,7 +15,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import github.scarsz.configuralize.DynamicConfig;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 
@@ -26,9 +25,9 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
     @Getter private static boolean usingProxy;
 
     public ProxyAlertMessenger() {
-        usingProxy = ProxyAlertMessenger.getBooleanFromFile("spigot.yml", "settings.bungeecord")
-                || ProxyAlertMessenger.getBooleanFromFile("paper.yml", "settings.velocity-support.enabled")
-                || (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19) && ProxyAlertMessenger.getBooleanFromFile("config/paper-global.yml", "proxies.velocity.enabled"));
+        usingProxy = ServerYaml.getBoolean("spigot.yml", "settings.bungeecord")
+                || ServerYaml.getBoolean("paper.yml", "settings.velocity-support.enabled")
+                || (PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_19) && ServerYaml.getBoolean("config/paper-global.yml", "proxies.velocity.enabled"));
 
         if (usingProxy) {
             LogUtil.info("Registering an outgoing plugin channel...");
@@ -74,21 +73,6 @@ public class ProxyAlertMessenger extends PacketListenerAbstract {
 
     public static boolean canReceiveAlerts() {
         return usingProxy && GrimAPI.INSTANCE.getConfigManager().getConfig().getBooleanElse("alerts.proxy.receive", false) && GrimAPI.INSTANCE.getAlertManager().hasAlertListeners();
-    }
-
-    // TODO (Cross-Platform) check if new getBooleanFromFile impl is correct
-    private static boolean getBooleanFromFile(String pathToFile, String pathToValue) {
-        File file = new File(pathToFile);
-        if (!file.exists()) return false;
-
-        DynamicConfig config = new DynamicConfig();
-        config.addSource(ProxyAlertMessenger.class, "temp", file);
-        try {
-            config.loadAll();
-            return config.getBoolean(pathToValue);
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     @Override
